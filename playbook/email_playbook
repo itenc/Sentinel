@@ -1,0 +1,51 @@
+- name: Send email on alert
+  description: "This playbook sends an email when an alert is triggered in Azure Sentinel."
+  metadata:
+    version: "1.0"
+    author: "Jan Mulder"
+    company: "SecureIT Indside B.V."
+  tasks:
+    - name: "Get alert details"
+      description: "Retrieve details of the triggered alert."
+      playbook:
+        name: "Azure Sentinel - Get Alert Details"
+        description: "This playbook retrieves details of the triggered alert."
+        tasks:
+          - name: "Get alert entity"
+            description: "Retrieve the entity associated with the alert."
+            action: sentinel-get-alert-entity
+            inputs:
+              alert_id: "{{incident.properties.alertId}}"
+            outputs:
+              - alert_entity: "{{context.alert_entity}}"
+    - name: "Compose email"
+      description: "Compose an email with alert details."
+      playbook:
+        name: "Compose Email"
+        description: "This playbook composes an email with alert details."
+        tasks:
+          - name: "Format email body"
+            description: "Format the body of the email with alert details."
+            action: compose-email
+            inputs:
+              subject: "Alert triggered in Azure Sentinel"
+              body: |
+                An alert has been triggered in Azure Sentinel.
+                - Alert Name: {{incident.properties.alertName}}
+                - Description: {{incident.properties.description}}
+                - Severity: {{incident.properties.severity}}
+                - Alert Entity: {{context.alert_entity}}
+        outputs:
+          - email_body: "{{context.email_body}}"
+    - name: "Send email"
+      description: "Send the composed email."
+      playbook:
+        name: "Send Email"
+        description: "This playbook sends the composed email."
+        tasks:
+          - name: "Send email"
+            description: "Send the email to the specified recipients."
+            action: send-email
+            inputs:
+              to: "j.mulder@secureitinside.nl"
+              body: "{{context.email_body}}"
